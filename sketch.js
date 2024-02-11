@@ -10,6 +10,8 @@ let sliderBeats, sliderSteps, button;
 let pauses = 2;
 let steps = 8;
 
+let images = []; // Array to store images
+
 function preload() {
   sounds.push(loadSound("sounds/pause.wav"));
   sounds.push(loadSound("sounds/note_C.wav"));
@@ -17,10 +19,19 @@ function preload() {
   sounds.push(loadSound("sounds/note_E.wav"));
   sounds.push(loadSound("sounds/note_G.wav"));
   sounds.push(loadSound("sounds/note_A.wav"));
+
+  for (let i = 1; i <= 5; i++) {
+    images[i - 1] = loadImage(
+      `./content/curvilinear_1_SILOUHETTE_EXTRACTIONS/Bard_Generated_Image-79_cutout_${i}.png`
+    );
+  }
 }
 
 function setup() {
-  createCanvas(400, 200);
+  createCanvas(2000, 1500);
+  background(255);
+  frameRate(10); // Set the frame rate to 10 frames per second
+
   // Set text properties
   textSize(16);
   fill(0); // Black color
@@ -61,7 +72,28 @@ function setup() {
 }
 
 function draw() {
-  background(255);
+  background(255); // Clear the canvas before drawing the images
+
+  for (let i = 0; i < 5; i++) {
+    push(); // Save the current transformation matrix
+
+    // Calculate displacement, scale, and rotation based on mouse position
+    let displacementX = map(mouseX, 0, width, 0, 1) * (random() - 0.5) * 200;
+    let displacementY = map(mouseX, 0, width, 0, 1) * (random() - 0.5) * 200;
+    let thisScale = 1 - map(mouseY, 0, height, 0.5, 2);
+    let rotation = map(mouseY, 0, height, 0, TWO_PI);
+
+    // Apply transformations
+    translate(displacementX, displacementY);
+    rotate(rotation);
+    scale(thisScale);
+
+    // Draw the image
+    imageMode(CENTER); // Draw the image centered at the specified position
+    image(images[i], width / 2, height / 2);
+
+    pop(); // Restore the transformation matrix
+  }
 
   let currentTime = millis();
   if (currentTime - lastTimeStamp > stepDuration) {
@@ -77,12 +109,12 @@ function draw() {
     }, stepDuration / 2);
   }
 
-  for (let i = 1; i < keys.length; i++) {
-    key = keys[i];
-    fill(key.isPressed ? "gray" : "white");
-    stroke("black");
-    rect(key.x, key.y, key.width, key.height);
-  }
+  // for (let i = 1; i < keys.length; i++) {
+  //   key = keys[i];
+  //   fill(key.isPressed ? "gray" : "white");
+  //   stroke("black");
+  //   rect(key.x, key.y, key.width, key.height);
+  // }
 }
 
 function mousePressed() {
@@ -110,7 +142,7 @@ function playSound(index) {
       sounds[index].stop(); // Stop the sound if it's already playing
     }
     sounds[index].setVolume(1.0); // Ensure the sound plays at full volume
-    sounds[index].play();
+    // sounds[index].play();
   }
 }
 
