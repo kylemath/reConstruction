@@ -16,6 +16,10 @@ let centroids = []; // Array to store centroids of images
 // Create an envelope
 let envelope;
 let cycleCounter = 0; // Counter for the number of cycles
+let ctracker;
+
+let faceX = 0;
+let faceY = 0;
 
 function preload() {
   sounds.push(loadSound("sounds/pause.wav"));
@@ -55,23 +59,65 @@ function setup() {
 
   // Make keyboard
   stepDuration = ((60 / bpm) * 1000) / (pattern.length / 2); // Calculate step duration based on pattern length and bpm
+
+  // Setup video capture
+  let videoInput = createCapture(VIDEO);
+  videoInput.size(width, height);
+  videoInput.hide();
+
+  // Setup clmtrackr
+  ctracker = new clm.tracker();
+  ctracker.init();
+  ctracker.start(videoInput.elt);
 }
 
 function draw() {
   background(255); // Clear the canvas before drawing the images
 
+  // Get array of face marker positions [x, y] format
+  let positions = ctracker.getCurrentPosition();
+
+  stroke(255, 0, 0); // Red color
+  if (positions) {
+    // Correct for mirrored video capture
+    faceX = width - positions[62][0];
+    faceY = positions[62][1];
+
+    // // for mouse testing
+    // faceX = mouseX;
+    // faceY = mouseY;
+
+    // Map the face's x position to the range of possible values for pauses
+    let pauses = map(faceX, 0, width, 1, steps, true);
+    // Map the face's y position to the range of possible values for steps
+    steps = map(faceY, 0, height, 8, 2, true);
+
+    // Round the values to integers
+    steps = Math.round(steps);
+    pauses = Math.round(pauses);
+
+    if (pauses == steps) {
+      pauses = steps - 1;
+    }
+
+    // Draw crosshair at face position
+    stroke(0, 255, 0); // Green color
+  }
+
   for (let i = 0; i < 5; i++) {
     push(); // Save the current transformation matrix
 
     // Calculate displacement, scale, and rotation based on mouse position
-    let displacementX = map(mouseX, 0, width, 0, 1) * (random() - 0.5) * 200;
-    let displacementY = map(mouseX, 0, width, 0, 1) * (random() - 0.5) * 200;
-    let rotation = map(mouseY, 0, height, 0, TWO_PI);
-
+    let displacementX =
+      map(faceX, 0, width, -0.5, 0.5) * (random() - 0.5) * 200;
+    let displacementY =
+      map(faceX, 0, width, -0.5, 0.5) * (random() - 0.5) * 200;
+    let rotation = map(faceY, 0, height, -PI, PI);
+    let tscale = map(faceY, 0, height, 0.5, 1.5);
     // Apply transformations
     translate(centroids[i].x, centroids[i].y); // Move to the centroid of the image
     rotate(rotation); // Apply rotation
-    scale(1);
+    scale(tscale);
     translate(-centroids[i].x, -centroids[i].y); // Move back
     translate(displacementX, displacementY); // Apply displacement
 
@@ -81,18 +127,8 @@ function draw() {
 
     pop(); // Restore the transformation matrix
   }
-
-  // Map the mouse's y position to the range of possible values for steps
-  steps = map(mouseY, 0, height, 8, 2, true);
-  steps = Math.round(steps);
-
-  // Map the mouse's x position to the range of possible values for pauses, with the maximum being the current number of steps
-  pauses = map(mouseX, 0, width, 0, steps, true);
-  pauses = Math.round(pauses);
-  if (pauses == steps) {
-    pauses = steps - 1;
-  }
-
+  line(faceX, 0, faceX, height); // Vertical line
+  line(0, faceY, width, faceY); // Horizontal line
   let currentTime = millis();
   if (currentTime - lastTimeStamp > stepDuration) {
     let noteIndex = pattern[currentIndex];
