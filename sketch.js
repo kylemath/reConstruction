@@ -12,6 +12,11 @@ let steps = 8;
 
 let images = []; // Array to store images
 
+let centroids = []; // Array to store centroids of images
+// Create an envelope
+let envelope;
+let newPatternReady = false; // Flag to indicate when a new pattern is ready
+
 function preload() {
   sounds.push(loadSound("sounds/pause.wav"));
   sounds.push(loadSound("sounds/note_C.wav"));
@@ -20,11 +25,20 @@ function preload() {
   sounds.push(loadSound("sounds/note_G.wav"));
   sounds.push(loadSound("sounds/note_A.wav"));
 
+  // loads images
   for (let i = 1; i <= 5; i++) {
-    images[i - 1] = loadImage(
-      `./content/curvilinear_1_SILOUHETTE_EXTRACTIONS/Bard_Generated_Image-79_cutout_${i}.png`
+    loadImage(
+      `./content/curvilinear_1_SILOUHETTE_EXTRACTIONS/Bard_Generated_Image-79_cutout_${i}.png`,
+      (img) => {
+        images[i - 1] = img;
+        centroids[i - 1] = calculateCentroid(img);
+      }
     );
   }
+
+  envelope = new p5.Envelope();
+  envelope.setADSR(0.1, 0.2, 0.5, 1); // Attack time, decay time, sustain level, release time
+  envelope.setRange(1.0, 0); // Maximum level, minimum level
 }
 
 function setup() {
@@ -38,37 +52,9 @@ function setup() {
 
   // Display the pattern
   text("Pattern: " + pattern.join(" "), 10, 350);
-  // Create labels
-  beatsLabel = createElement("label", "Pauses: ");
-  beatsLabel.position(10, 260);
-  stepsLabel = createElement("label", "Steps: ");
-  stepsLabel.position(10, 300);
-
-  // Create sliders
-  sliderBeats = createSlider(1, 7, 2);
-  sliderBeats.position(10, 280);
-  sliderSteps = createSlider(2, 8, 8);
-  sliderSteps.position(10, 320);
-
-  // Create button
-  button = createButton("Update Pattern");
-  button.position(10, 340);
-  button.mousePressed(updatePattern);
 
   // Make keyboard
-  let numberOfKeys = 6;
-  let keyWidth = width / numberOfKeys;
   stepDuration = ((60 / bpm) * 1000) / (pattern.length / 2); // Calculate step duration based on pattern length and bpm
-
-  for (let i = 0; i < numberOfKeys; i++) {
-    keys.push({
-      x: i * keyWidth,
-      y: 0,
-      width: keyWidth,
-      height: 400,
-      isPressed: false,
-    });
-  }
 }
 
 function draw() {
@@ -80,13 +66,14 @@ function draw() {
     // Calculate displacement, scale, and rotation based on mouse position
     let displacementX = map(mouseX, 0, width, 0, 1) * (random() - 0.5) * 200;
     let displacementY = map(mouseX, 0, width, 0, 1) * (random() - 0.5) * 200;
-    let thisScale = 1 - map(mouseY, 0, height, 0.5, 2);
     let rotation = map(mouseY, 0, height, 0, TWO_PI);
 
     // Apply transformations
-    translate(displacementX, displacementY);
-    rotate(rotation);
-    scale(thisScale);
+    translate(centroids[i].x, centroids[i].y); // Move to the centroid of the image
+    rotate(rotation); // Apply rotation
+    scale(1);
+    translate(-centroids[i].x, -centroids[i].y); // Move back
+    translate(displacementX, displacementY); // Apply displacement
 
     // Draw the image
     imageMode(CENTER); // Draw the image centered at the specified position
@@ -95,61 +82,51 @@ function draw() {
     pop(); // Restore the transformation matrix
   }
 
+  // Map the mouse's y position to the range of possible values for steps
+  steps = map(mouseY, 0, height, 8, 2, true);
+  steps = Math.round(steps);
+
+  // Map the mouse's x position to the range of possible values for pauses, with the maximum being the current number of steps
+  pauses = map(mouseX, 0, width, 0, steps, true);
+  pauses = Math.round(pauses);
+  if (pauses == steps) {
+    pauses = steps - 1;
+  }
+
   let currentTime = millis();
   if (currentTime - lastTimeStamp > stepDuration) {
     let noteIndex = pattern[currentIndex];
     playSound(noteIndex);
-    keys[noteIndex].isPressed = true; // Visually indicate key press
     currentIndex = (currentIndex + 1) % pattern.length; // Move to the next step in the pattern
+    // Check if a new pattern is ready and the current pattern has finished playing
+    if (newPatternReady && currentIndex === 0) {
+      updatePattern(); // Update the pattern
+      newPatternReady = false; // Reset the flag
+    }
     lastTimeStamp = currentTime;
-
-    // Reset visual indication after a short delay
-    setTimeout(() => {
-      keys[noteIndex].isPressed = false;
-    }, stepDuration / 2);
   }
-
-  // for (let i = 1; i < keys.length; i++) {
-  //   key = keys[i];
-  //   fill(key.isPressed ? "gray" : "white");
-  //   stroke("black");
-  //   rect(key.x, key.y, key.width, key.height);
-  // }
 }
 
 function mousePressed() {
-  for (let i = 0; i < keys.length; i++) {
-    let key = keys[i];
-    if (
-      mouseX > key.x &&
-      mouseX < key.x + key.width &&
-      mouseY > key.y &&
-      mouseY < key.y + key.height
-    ) {
-      // Key is pressed
-      keys[i].isPressed = true;
-      playSound(i);
-      setTimeout(() => {
-        keys[i].isPressed = false; // Ensure visual reset after manual play
-      }, 100); // Adjust as necessary for visual timing
-    }
-  }
+  newPatternReady = true;
 }
 
 function playSound(index) {
   if (sounds[index]) {
     if (sounds[index].isPlaying()) {
-      sounds[index].stop(); // Stop the sound if it's already playing
+      sounds[index].fade(0, 0.25); // Fade out over 0.1 seconds
+      // setTimeout(() => sounds[index].stop(), 100); // Stop the sound after the fade-out
     }
-    sounds[index].setVolume(1.0); // Ensure the sound plays at full volume
-    // sounds[index].play();
+    sounds[index].setVolume(0.0); // Start the sound at zero volume for fade-in
+    sounds[index].play();
+    sounds[index].setVolume(1, 0.25); // Fade in over 0.1 seconds
   }
 }
 
 function updatePattern() {
-  // Use slider values
-  let pauses = sliderBeats.value();
-  let steps = sliderSteps.value();
+  // // Use slider values
+  // let pauses = sliderBeats.value();
+  // let steps = sliderSteps.value();
 
   if (pauses > steps) {
     alert("Pauses cannot be greater than steps!");
@@ -168,7 +145,7 @@ function updatePattern() {
 }
 
 function getEuclideanRhythm(n, k) {
-  if (n <= 0 || k <= 0 || n < k) {
+  if (n <= 0 || k < 0 || n < k) {
     throw Error("invalid arguments");
   }
 
@@ -179,4 +156,30 @@ function getEuclideanRhythm(n, k) {
     pattern[Math.floor((i * n) / k)] = 0; // Distribute pauses evenly
   }
   return pattern;
+}
+
+function calculateCentroid(img) {
+  let sumX = 0;
+  let sumY = 0;
+  let count = 0;
+
+  img.loadPixels();
+  for (let y = 0; y < img.height; y++) {
+    for (let x = 0; x < img.width; x++) {
+      let index = (x + y * img.width) * 4;
+      let alpha = img.pixels[index + 3];
+      if (alpha > 0) {
+        // If the pixel is not transparent
+        sumX += x;
+        sumY += y;
+        count++;
+      }
+    }
+  }
+
+  if (count === 0) {
+    return createVector(img.width / 2, img.height / 2); // Return the center of the image if all pixels are transparent
+  } else {
+    return createVector(sumX / count, sumY / count); // Return the centroid of non-transparent pixels
+  }
 }
