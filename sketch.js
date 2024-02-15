@@ -15,7 +15,7 @@ let images = []; // Array to store images
 let centroids = []; // Array to store centroids of images
 // Create an envelope
 let envelope;
-let newPatternReady = false; // Flag to indicate when a new pattern is ready
+let cycleCounter = 0; // Counter for the number of cycles
 
 function preload() {
   sounds.push(loadSound("sounds/pause.wav"));
@@ -99,17 +99,18 @@ function draw() {
     playSound(noteIndex);
     currentIndex = (currentIndex + 1) % pattern.length; // Move to the next step in the pattern
     // Check if a new pattern is ready and the current pattern has finished playing
-    if (newPatternReady && currentIndex === 0) {
-      updatePattern(); // Update the pattern
-      newPatternReady = false; // Reset the flag
+    if (currentIndex === 0) {
+      cycleCounter++; // Increment the counter each time a cycle completes
+      if (cycleCounter === 4) {
+        updatePattern(); // Update the pattern
+        cycleCounter = 0; // Reset the counter
+      }
     }
     lastTimeStamp = currentTime;
   }
 }
 
-function mousePressed() {
-  newPatternReady = true;
-}
+function mousePressed() {}
 
 function playSound(index) {
   if (sounds[index]) {
