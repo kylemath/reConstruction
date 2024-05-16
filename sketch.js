@@ -21,13 +21,32 @@ let ctracker;
 let faceX = 0;
 let faceY = 0;
 
+let soundsPerNote = {
+  'A#': [1, 18],
+  'C#': [19, 34],
+  'D#': [35, 55],
+  'F#': [56, 69],
+  'G#': [71, 89],
+};
+
+let soundNumber
+
+
+
+
 function preload() {
+
   sounds.push(loadSound("sounds/pause.wav"));
-  sounds.push(loadSound("sounds/note_C.wav"));
-  sounds.push(loadSound("sounds/note_D.wav"));
-  sounds.push(loadSound("sounds/note_E.wav"));
-  sounds.push(loadSound("sounds/note_G.wav"));
-  sounds.push(loadSound("sounds/note_A.wav"));
+
+  for (let i = 0; i < 5; i++) {
+    let note = soundsPerNote.keys[i];
+    soundNumber = soundsPerNote[note][0] + 
+    Math.round(Math.random() * 
+    (soundsPerNote[note][1] - soundsPerNote[note][0])
+    );
+    sounds.push(loadSound('sounds/1_' + note + `_mp3/${soundNumber}.mp3`));
+  }
+ 
 
   // Define the current puzzle number
   let puzzleNumber = 8;
