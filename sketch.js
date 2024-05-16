@@ -13,8 +13,8 @@ let steps = 8;
 let images = []; // Array to store images
 
 let centroids = []; // Array to store centroids of images
-// Create an envelope
-let envelope;
+let envelope; // Create an envelope
+
 let cycleCounter = 0; // Counter for the number of cycles
 let ctracker;
 
@@ -29,15 +29,17 @@ function preload() {
   sounds.push(loadSound("sounds/note_G.wav"));
   sounds.push(loadSound("sounds/note_A.wav"));
 
-  // loads images
+  // Define the current puzzle number
+  let puzzleNumber = 8;
+  // Construct the base path for the images
+  const basePath = `puzzles/curvilinear${puzzleNumber}_SILOUHETTEEXTRACTIONS`;
+
+  // Load images from 1 to 5
   for (let i = 1; i <= 5; i++) {
-    loadImage(
-      `./content/curvilinear_1_SILOUHETTE_EXTRACTIONS/Bard_Generated_Image-79_cutout_${i}.png`,
-      (img) => {
-        images[i - 1] = img;
-        centroids[i - 1] = calculateCentroid(img);
-      }
-    );
+    loadImage(`${basePath}/${i}.png`, (img) => {
+      images[i - 1] = img;
+      centroids[i - 1] = calculateCentroid(img);
+    });
   }
 
   envelope = new p5.Envelope();
@@ -80,15 +82,16 @@ function draw() {
   stroke(255, 0, 0); // Red color
   if (positions) {
     // Correct for mirrored video capture
-    faceX = width - positions[62][0];
-    faceY = positions[62][1];
+    // faceX = width - positions[62][0];
+    // faceY = positions[62][1];
 
-    // // for mouse testing
-    // faceX = mouseX;
-    // faceY = mouseY;
+    // for mouse testing
+    faceX = mouseX;
+    faceY = mouseY;
 
     // Map the face's x position to the range of possible values for pauses
     let pauses = map(faceX, 0, width, 1, steps, true);
+
     // Map the face's y position to the range of possible values for steps
     steps = map(faceY, 0, height, 8, 2, true);
 
@@ -114,6 +117,7 @@ function draw() {
       map(faceX, 0, width, -0.5, 0.5) * (random() - 0.5) * 200;
     let rotation = map(faceY, 0, height, -PI, PI);
     let tscale = map(faceY, 0, height, 0.5, 1.5);
+
     // Apply transformations
     translate(centroids[i].x, centroids[i].y); // Move to the centroid of the image
     rotate(rotation); // Apply rotation
@@ -127,13 +131,17 @@ function draw() {
 
     pop(); // Restore the transformation matrix
   }
+
   line(faceX, 0, faceX, height); // Vertical line
   line(0, faceY, width, faceY); // Horizontal line
+
   let currentTime = millis();
+
   if (currentTime - lastTimeStamp > stepDuration) {
     let noteIndex = pattern[currentIndex];
     playSound(noteIndex);
     currentIndex = (currentIndex + 1) % pattern.length; // Move to the next step in the pattern
+
     // Check if a new pattern is ready and the current pattern has finished playing
     if (currentIndex === 0) {
       cycleCounter++; // Increment the counter each time a cycle completes
@@ -143,80 +151,5 @@ function draw() {
       }
     }
     lastTimeStamp = currentTime;
-  }
-}
-
-function mousePressed() {}
-
-function playSound(index) {
-  if (sounds[index]) {
-    if (sounds[index].isPlaying()) {
-      sounds[index].fade(0, 0.25); // Fade out over 0.1 seconds
-      // setTimeout(() => sounds[index].stop(), 100); // Stop the sound after the fade-out
-    }
-    sounds[index].setVolume(0.0); // Start the sound at zero volume for fade-in
-    sounds[index].play();
-    sounds[index].setVolume(1, 0.25); // Fade in over 0.1 seconds
-  }
-}
-
-function updatePattern() {
-  // // Use slider values
-  // let pauses = sliderBeats.value();
-  // let steps = sliderSteps.value();
-
-  if (pauses > steps) {
-    alert("Pauses cannot be greater than steps!");
-    pauses = steps;
-  }
-  // Reset the current pattern and index
-  pattern = []; // Clear the current pattern
-  currentIndex = 0; // Reset the index to start at the beginning of the new pattern
-
-  // Euclidean rhythm algorithm to generate a new pattern based on user input
-  pattern = getEuclideanRhythm(steps, pauses);
-
-  // Update the pattern display below the UI elements
-  let patternDisplay = document.getElementById("patternDisplay");
-  patternDisplay.textContent = "Pattern: " + pattern.join(" "); // Display the pattern as a string
-}
-
-function getEuclideanRhythm(n, k) {
-  if (n <= 0 || k < 0 || n < k) {
-    throw Error("invalid arguments");
-  }
-
-  let pattern = new Array(n)
-    .fill()
-    .map(() => Math.floor(Math.random() * 5) + 1); // Initialize pattern with different random notes
-  for (let i = 0; i < k; i++) {
-    pattern[Math.floor((i * n) / k)] = 0; // Distribute pauses evenly
-  }
-  return pattern;
-}
-
-function calculateCentroid(img) {
-  let sumX = 0;
-  let sumY = 0;
-  let count = 0;
-
-  img.loadPixels();
-  for (let y = 0; y < img.height; y++) {
-    for (let x = 0; x < img.width; x++) {
-      let index = (x + y * img.width) * 4;
-      let alpha = img.pixels[index + 3];
-      if (alpha > 0) {
-        // If the pixel is not transparent
-        sumX += x;
-        sumY += y;
-        count++;
-      }
-    }
-  }
-
-  if (count === 0) {
-    return createVector(img.width / 2, img.height / 2); // Return the center of the image if all pixels are transparent
-  } else {
-    return createVector(sumX / count, sumY / count); // Return the centroid of non-transparent pixels
   }
 }
