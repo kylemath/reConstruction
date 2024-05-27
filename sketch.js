@@ -22,11 +22,11 @@ let faceX = 0;
 let faceY = 0;
 
 let soundsPerNote = {
-  'A#': [1, 18],
-  'C#': [19, 34],
-  'D#': [35, 55],
-  'F#': [56, 69],
-  'G#': [71, 89],
+  'Asharp': [1, 18],
+  'Csharp': [19, 34],
+  'Dsharp': [35, 55],
+  'Fsharp': [56, 69],
+  'Gsharp': [71, 89],
 };
 
 let soundNumber
@@ -39,13 +39,12 @@ function preload() {
   sounds.push(loadSound("sounds/pause.wav"));
 
   for (let i = 0; i < 5; i++) {
-    let note = soundsPerNote.keys[i];
+    let note = Object.keys(soundsPerNote)[i];
     soundNumber = soundsPerNote[note][0] + 
     Math.round(Math.random() * 
     (soundsPerNote[note][1] - soundsPerNote[note][0])
     );
-    sounds.push(loadSound('sounds/1_' + note + `_mp3/${soundNumber}.mp3`));
-  }
+    sounds.push(loadSound('sounds/'+ (i+1) +'_' + note + `_mp3/${soundNumber}.mp3`));  }
  
 
   // Define the current puzzle number
