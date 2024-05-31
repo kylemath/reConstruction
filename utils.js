@@ -1,38 +1,11 @@
-function playSound(index) {
-  if (sounds[index]) {
-    if (sounds[index].isPlaying()) {
-      sounds[index].fade(0, 0.25); // Fade out over 0.1 seconds
-      // setTimeout(() => sounds[index].stop(), 100); // Stop the sound after the fade-out
-    }
-    sounds[index].setVolume(0.0); // Start the sound at zero volume for fade-in
-    sounds[index].play();
-    sounds[index].setVolume(1, 0.25); // Fade in over 0.1 seconds
-  }
-}
+function playAllSounds() {
+  // Play background sound
 
-function updatePattern() {
-  if (pauses > steps) {
-    alert("Pauses cannot be greater than steps!");
-    pauses = steps;
+  for (let i = 1; i <= 5; i++) {
+    let sound = sounds[i];
+    sound.play();
+    // envelope.play(sound);
   }
-  pattern = []; // Clear the current pattern
-  currentIndex = 0; // Reset the index to start at the beginning of the new pattern
-  pattern = getEuclideanRhythm(steps, pauses);
-  let patternDisplay = document.getElementById("patternDisplay");
-  patternDisplay.textContent = "Pattern: " + pattern.join(" ");
-}
-
-function getEuclideanRhythm(n, k) {
-  if (n <= 0 || k < 0 || n < k) {
-    throw Error("invalid arguments");
-  }
-  let pattern = new Array(n)
-    .fill()
-    .map(() => Math.floor(Math.random() * 5) + 1);
-  for (let i = 0; i < k; i++) {
-    pattern[Math.floor((i * n) / k)] = 0;
-  }
-  return pattern;
 }
 
 function calculateCentroid(img) {

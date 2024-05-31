@@ -7,8 +7,10 @@ let bpm = 100; // Tempo in beats per minute
 let stepDuration; // Duration of one step in the pattern in milliseconds
 let sliderBeats, sliderSteps, button;
 
-let pauses = 2;
-let steps = 8;
+let audioSustainLevel = 0.5; // 0-1
+let audioReleaseTime = 0.5; // Seconds
+let audioAttackTime = 0.1; // Seconds
+let audioDecayTime = 0.3; // Seconds
 
 let images = []; // Array to store images
 
@@ -20,35 +22,62 @@ let ctracker;
 
 let faceX = 0;
 let faceY = 0;
-
+let soundsStarted = false; // Flag to track if sounds have started playing
 let soundsPerNote = {
-  'Asharp': [1, 18],
-  'Csharp': [19, 34],
-  'Dsharp': [35, 55],
-  'Fsharp': [56, 69],
-  'Gsharp': [71, 89],
+  Asharp: [1, 18],
+  Csharp: [19, 34],
+  Dsharp: [35, 55],
+  Fsharp: [56, 69],
+  Gsharp: [71, 89],
 };
 
-let soundNumber
-
-
-
+let soundNumber;
 
 function preload() {
+  let backgroundSoundNumber = Math.floor(Math.random() * 11) + 90; // Assuming there are 10 background sounds
+  let backgroundSoundFile = `sounds/6_wildcard_ambience/${backgroundSoundNumber}_WC.mp3`;
+  console.log("Background Sound File:", backgroundSoundFile);
+  let backgroundSound = loadSound(backgroundSoundFile);
 
   sounds.push(loadSound("sounds/pause.wav"));
 
   for (let i = 0; i < 5; i++) {
     let note = Object.keys(soundsPerNote)[i];
-    soundNumber = soundsPerNote[note][0] + 
-    Math.round(Math.random() * 
-    (soundsPerNote[note][1] - soundsPerNote[note][0])
+    soundNumber =
+      soundsPerNote[note][0] +
+      Math.round(
+        Math.random() * (soundsPerNote[note][1] - soundsPerNote[note][0])
+      );
+    let currentSoundFile =
+      "sounds/" + (i + 1) + "_" + note + `_mp3/${soundNumber}.mp3`;
+    console.log(
+      "Loading Sounds File:",
+      currentSoundFile,
+      "File Number:",
+      sounds.length
     );
-    sounds.push(loadSound('sounds/'+ (i+1) +'_' + note + `_mp3/${soundNumber}.mp3`));  }
- 
+    let sound = loadSound(currentSoundFile);
+
+    // Panning for each of the five notes
+    if (i === 0) {
+      sound.pan(-1);
+    } else if (i === 1) {
+      sound.pan(-0.5);
+    } else if (i === 2) {
+      sound.pan(0);
+    } else if (i === 3) {
+      sound.pan(0.5);
+    } else if (i === 4) {
+      sound.pan(1);
+    }
+
+    sounds.push(sound);
+  }
+
+  console.log("Sounds loaded:", sounds);
 
   // Define the current puzzle number
-  let puzzleNumber = 8;
+  let puzzleNumber = Math.floor(Math.random() * 8) + 1;
   // Construct the base path for the images
   const basePath = `puzzles/curvilinear${puzzleNumber}_SILOUHETTEEXTRACTIONS`;
 
@@ -61,7 +90,12 @@ function preload() {
   }
 
   envelope = new p5.Envelope();
-  envelope.setADSR(0.1, 0.2, 0.5, 1); // Attack time, decay time, sustain level, release time
+  envelope.setADSR(
+    audioAttackTime,
+    audioDecayTime,
+    audioSustainLevel,
+    audioReleaseTime
+  );
   envelope.setRange(1.0, 0); // Maximum level, minimum level
 }
 
@@ -69,13 +103,6 @@ function setup() {
   createCanvas(2000, 1500);
   background(255);
   frameRate(10); // Set the frame rate to 10 frames per second
-
-  // Set text properties
-  textSize(16);
-  fill(0); // Black color
-
-  // Display the pattern
-  text("Pattern: " + pattern.join(" "), 10, 350);
 
   // Make keyboard
   stepDuration = ((60 / bpm) * 1000) / (pattern.length / 2); // Calculate step duration based on pattern length and bpm
@@ -99,27 +126,13 @@ function draw() {
 
   stroke(255, 0, 0); // Red color
   if (positions) {
-    // Correct for mirrored video capture
+    // // Correct for mirrored video capture
     // faceX = width - positions[62][0];
     // faceY = positions[62][1];
 
     // for mouse testing
     faceX = mouseX;
     faceY = mouseY;
-
-    // Map the face's x position to the range of possible values for pauses
-    let pauses = map(faceX, 0, width, 1, steps, true);
-
-    // Map the face's y position to the range of possible values for steps
-    steps = map(faceY, 0, height, 8, 2, true);
-
-    // Round the values to integers
-    steps = Math.round(steps);
-    pauses = Math.round(pauses);
-
-    if (pauses == steps) {
-      pauses = steps - 1;
-    }
 
     // Draw crosshair at face position
     stroke(0, 255, 0); // Green color
@@ -153,21 +166,9 @@ function draw() {
   line(faceX, 0, faceX, height); // Vertical line
   line(0, faceY, width, faceY); // Horizontal line
 
-  let currentTime = millis();
-
-  if (currentTime - lastTimeStamp > stepDuration) {
-    let noteIndex = pattern[currentIndex];
-    playSound(noteIndex);
-    currentIndex = (currentIndex + 1) % pattern.length; // Move to the next step in the pattern
-
-    // Check if a new pattern is ready and the current pattern has finished playing
-    if (currentIndex === 0) {
-      cycleCounter++; // Increment the counter each time a cycle completes
-      if (cycleCounter === 4) {
-        updatePattern(); // Update the pattern
-        cycleCounter = 0; // Reset the counter
-      }
-    }
-    lastTimeStamp = currentTime;
+  // Check if the mouse is clicked to trigger sounds
+  if (!soundsStarted) {
+    playAllSounds();
+    soundsStarted = true; // Set the flag to true once sounds start playing
   }
 }
