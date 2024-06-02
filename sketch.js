@@ -1,5 +1,6 @@
 let keys = [];
 let sounds = [];
+let backgroundSound;
 let pattern = [0, 4, 0, 2, 0, 4, 4]; // Represents the rhythm pattern "0----0--" with indices of sounds/keys
 let currentIndex = 0; // Current index in the rhythm pattern
 let lastTimeStamp = 0; // To track the timing of rhythm playback
@@ -19,9 +20,7 @@ let envelope; // Create an envelope
 
 let cycleCounter = 0; // Counter for the number of cycles
 let ctracker;
-
-let faceX = 0;
-let faceY = 0;
+let faceX, faceY;
 let soundsStarted = false; // Flag to track if sounds have started playing
 let soundsPerNote = {
   Asharp: [1, 18],
@@ -37,7 +36,7 @@ function preload() {
   let backgroundSoundNumber = Math.floor(Math.random() * 11) + 90; // Assuming there are 10 background sounds
   let backgroundSoundFile = `sounds/6_wildcard_ambience/${backgroundSoundNumber}_WC.mp3`;
   console.log("Background Sound File:", backgroundSoundFile);
-  let backgroundSound = loadSound(backgroundSoundFile);
+  backgroundSound = loadSound(backgroundSoundFile);
 
   sounds.push(loadSound("sounds/pause.wav"));
 
@@ -103,7 +102,8 @@ function setup() {
   createCanvas(2000, 1500);
   background(255);
   frameRate(10); // Set the frame rate to 10 frames per second
-
+  faceX = 0;
+  faceY = 0;
   // Make keyboard
   stepDuration = ((60 / bpm) * 1000) / (pattern.length / 2); // Calculate step duration based on pattern length and bpm
 
@@ -112,31 +112,31 @@ function setup() {
   videoInput.size(width, height);
   videoInput.hide();
 
-  // Setup clmtrackr
-  ctracker = new clm.tracker();
-  ctracker.init();
-  ctracker.start(videoInput.elt);
+  // // Setup clmtrackr
+  // ctracker = new clm.tracker();
+  // ctracker.init();
+  // ctracker.start(videoInput.elt);
 }
 
 function draw() {
   background(255); // Clear the canvas before drawing the images
 
-  // Get array of face marker positions [x, y] format
-  let positions = ctracker.getCurrentPosition();
+  // // Get array of face marker positions [x, y] format
+  // let positions = ctracker.getCurrentPosition();
 
   stroke(255, 0, 0); // Red color
-  if (positions) {
-    // // Correct for mirrored video capture
-    // faceX = width - positions[62][0];
-    // faceY = positions[62][1];
+  // if (positions) {
+  // // Correct for mirrored video capture
+  // faceX = width - positions[62][0];
+  // faceY = positions[62][1];
 
-    // for mouse testing
-    faceX = mouseX;
-    faceY = mouseY;
+  // for mouse testing
+  faceX = mouseX;
+  faceY = mouseY;
 
-    // Draw crosshair at face position
-    stroke(0, 255, 0); // Green color
-  }
+  // Draw crosshair at face position
+  stroke(0, 255, 0); // Green color
+  // }
 
   for (let i = 0; i < 5; i++) {
     push(); // Save the current transformation matrix

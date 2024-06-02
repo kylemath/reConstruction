@@ -1,6 +1,5 @@
 function playAllSounds() {
-  // Play background sound
-
+  backgroundSound.play();
   for (let i = 1; i <= 5; i++) {
     let sound = sounds[i];
     sound.play();
