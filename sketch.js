@@ -31,6 +31,17 @@ let soundsPerNote = {
 };
 
 let soundNumber;
+let startButton;
+let started = false; // Flag to control the start state
+
+let volumeBackground = 0.2;
+let volumeSettings = {
+  Asharp: 0.2,
+  Csharp: 0.2,
+  Dsharp: 0.2,
+  Fsharp: 0.2,
+  Gsharp: 0.2,
+};
 
 function preload() {
   let backgroundSoundNumber = Math.floor(Math.random() * 11) + 90; // Assuming there are 10 background sounds
@@ -99,7 +110,7 @@ function preload() {
 }
 
 function setup() {
-  createCanvas(2000, 1500);
+  let canvas = createCanvas(windowWidth * 0.9, windowHeight * 0.9);
   background(255);
   frameRate(10); // Set the frame rate to 10 frames per second
   faceX = 0;
@@ -112,31 +123,66 @@ function setup() {
   videoInput.size(width, height);
   videoInput.hide();
 
-  // // Setup clmtrackr
-  // ctracker = new clm.tracker();
-  // ctracker.init();
-  // ctracker.start(videoInput.elt);
+  // Setup start button
+  startButton = createButton("Start");
+  startButton.position(width / 2 - startButton.width / 2, height / 2 - 50); // Center the button horizontally and place it 50 pixels below the center vertically
+  startButton.mousePressed(startInteraction);
+
+  // Setup clmtrackr
+  ctracker = new clm.tracker();
+  ctracker.init();
+  ctracker.start(videoInput.elt);
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth * 0.9, windowHeight * 0.9);
+  startButton.position(width / 2 - startButton.width / 2, height / 2 + 50); // Reposition the button
+}
+
+function startInteraction() {
+  started = true; // Set the flag to true to start the interaction
+  playAllSounds();
+  soundsStarted = true; // Set the flag to true once sounds start playing
+  startButton.hide(); // Hide the start button after starting
+}
+
+function playAllSounds() {
+  backgroundSound.setVolume(volumeBackground);
+  backgroundSound.play();
+  for (let i = 1; i <= 5; i++) {
+    let sound = sounds[i];
+    sound.setVolume(eval("volumeSound" + i)); // Dynamically set volume based on the variable
+    sound.play();
+  }
 }
 
 function draw() {
+  if (!started) {
+    background(255); // Clear the canvas
+    textSize(32);
+    textAlign(CENTER, CENTER);
+    text("Press Start to Begin", width / 2, height / 2);
+    return; // Exit the draw function early if not started
+  }
+
   background(255); // Clear the canvas before drawing the images
 
-  // // Get array of face marker positions [x, y] format
-  // let positions = ctracker.getCurrentPosition();
+  // Get array of face marker positions [x, y] format
+  let positions = ctracker.getCurrentPosition();
 
   stroke(255, 0, 0); // Red color
-  // if (positions) {
-  // // Correct for mirrored video capture
-  // faceX = width - positions[62][0];
-  // faceY = positions[62][1];
+  if (positions) {
+    // Correct for mirrored video capture
+    faceX = width - positions[62][0];
+    faceY = positions[62][1];
 
-  // for mouse testing
-  faceX = mouseX;
-  faceY = mouseY;
+    // // for mouse testing
+    // faceX = mouseX;
+    // faceY = mouseY;
 
-  // Draw crosshair at face position
-  stroke(0, 255, 0); // Green color
-  // }
+    // Draw crosshair at face position
+    stroke(0, 255, 0); // Green color
+  }
 
   for (let i = 0; i < 5; i++) {
     push(); // Save the current transformation matrix
@@ -165,10 +211,4 @@ function draw() {
 
   line(faceX, 0, faceX, height); // Vertical line
   line(0, faceY, width, faceY); // Horizontal line
-
-  // Check if the mouse is clicked to trigger sounds
-  if (!soundsStarted) {
-    playAllSounds();
-    soundsStarted = true; // Set the flag to true once sounds start playing
-  }
 }
