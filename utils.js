@@ -1,13 +1,3 @@
-function playAllSounds() {
-  backgroundSound.setVolume(volumeBackground);
-  backgroundSound.play();
-  Object.keys(soundsPerNote).forEach((note, index) => {
-    let sound = sounds[index + 1]; // Adjust index since sounds[0] is the background sound
-    sound.setVolume(volumeSettings[note]);
-    sound.play();
-  });
-}
-
 function calculateCentroid(img) {
   let sumX = 0;
   let sumY = 0;
