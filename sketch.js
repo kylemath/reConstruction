@@ -1,7 +1,12 @@
 let debug = false; // Set to true for debugging, false for normal operation
 
 let puzzleTimeSeconds = 120;
-let puzzleTransitionTimeSeconds = 10;
+let puzzleTransitionTimeSeconds = 6;
+
+let iconWidth = 100;
+let iconHeight = iconWidth;
+
+let alphaValue = 0; // Initialize value for fade-in effect of puzzle
 
 if (debug) {
   puzzleTimeSeconds = 2;
@@ -58,8 +63,26 @@ let startVideo;
 
 let videoEndTime;
 let mainLoopStartTime = 0;
-let puzzleNumber = 1;
 let transitionImages = [];
+
+let puzzleNumber = 1;
+let puzzleOrder = [];
+for (let i = 1; i <= 8; i++) {
+  // Assuming you have 8 puzzles
+  puzzleOrder.push(i);
+}
+
+// Shuffle function (Fisher-Yates shuffle)
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+  }
+}
+
+// Shuffle the puzzle order
+shuffleArray(puzzleOrder);
+console.log("puzzle order", puzzleOrder);
 
 function loadSounds() {
   sounds = [];
@@ -104,7 +127,9 @@ function loadSounds() {
   console.log("Sounds loaded:", sounds);
 
   // Construct the base path for the images
-  const basePath = `puzzles/curvilinear${puzzleNumber}_SILOUHETTEEXTRACTIONS`;
+  const basePath = `puzzles/curvilinear${
+    puzzleOrder[puzzleNumber - 1]
+  }_SILOUHETTEEXTRACTIONS`;
   console.log("loading from folder:", basePath);
 
   // Load images from 1 to 5
@@ -125,12 +150,13 @@ function preload() {
   for (let i = 2; i <= 8; i++) {
     transitionImages[i] = loadImage(`splashScreens/${i}.jpg`);
   }
-
+  iconImage = loadImage("assets/ICON_reconstruction.png");
   console.log("transitionImagesLoaded", transitionImages);
   splashScreenImage = loadImage("splashScreens/StartPressKey.jpg");
   blankScreenImage = loadImage("splashScreens/Blank.jpg");
   startVideo = createVideo(["videos/startVideo.mp4"]);
   startVideo.hide(); // Hide the HTML video element
+  startVideo.position(100, 100);
   startVideo.onended(videoEnded); // Add an event listener for when the video ends
   if (debug) {
     startVideo.elt.ontimeupdate = function () {
@@ -220,11 +246,11 @@ function stopAllSounds() {
 function fadeOutAllSounds() {
   // Fade out the background sound
   if (backgroundSound) {
-    backgroundSound.fade(0, puzzleTransitionTimeSeconds - 1); // Fade to volume 0 over 1 second
+    backgroundSound.fade(0, puzzleTransitionTimeSeconds + 2); // Fade to volume 0 over 1 second
   }
   // Fade out all sounds in the sounds array
   for (let sound of sounds) {
-    sound.fade(0, puzzleTransitionTimeSeconds - 1); // Fade to volume 0 over 1 second
+    sound.fade(0, puzzleTransitionTimeSeconds + 2); // Fade to volume 0 over 1 second
   }
 }
 
@@ -237,30 +263,46 @@ function videoEnded() {
 
 function startNextLoop() {
   puzzleNumber++;
+  alphaValue = 0; // Reset alpha value for the next puzzle's fade-in effect
+
   console.log("New puzzle Number:", puzzleNumber);
-  if (puzzleNumber < 8) {
-    stopAllSounds(); // Stop all sounds
+  if (puzzleNumber <= 8) {
     // Load the corresponding splash screen image
     splashScreenImage = loadImage(`splashScreens/${puzzleNumber}.jpg`);
     loadSounds();
     // Start the next loop
     currentState = "blankScreen";
+
     setTimeout(function () {
       currentState = "mainLoop";
       playAllSounds(); // Start playing the new sounds
       mainLoopStartTime = millis(); // Store the time when the main loop starts
     }, 2000); // Wait for 2 seconds
-  } else {
-    currentState = "endVideo";
-    endVideo.play();
   }
 }
 
 function reset() {
-  puzzleNumber = 0;
-  currentState = "splashScreen";
-  splashScreenImage = loadImage("splashScreens/StartPressKey.jpg");
-  loadSounds();
+  // Reload the page to reset the application
+  window.location.reload();
+}
+
+function updateVolumesBasedOnDistance() {
+  for (let i = 0; i < centroids.length; i++) {
+    if (centroids[i]) {
+      // Calculate the distance between the face and the centroid
+      let distance = dist(faceX, faceY, centroids[i].x, centroids[i].y);
+
+      // Map the distance to a volume level (0.0 to 1.0)
+      // Assuming a maximum effective distance of 600 pixels for full volume
+      let volume = map(distance, 0, 600, 1.0, 0.0, true);
+      volume = constrain(volume, 0, 1); // Ensure volume is within bounds
+
+      // Update the volume of the corresponding sound
+      if (sounds[i]) {
+        sounds[i].setVolume(volume);
+      }
+    }
+  }
 }
 
 function draw() {
@@ -281,22 +323,22 @@ function draw() {
     }
 
     background(255); // Clear the canvas before drawing the images
+    tint(255, alphaValue);
 
     // Get array of face marker positions [x, y] format
     let positions = ctracker.getCurrentPosition();
 
-    stroke(255, 0, 0); // Red color
     if (positions) {
       // Correct for mirrored video capture
       faceX = width - positions[62][0];
       faceY = positions[62][1];
 
-      // // for mouse testing
+      // // // for mouse testing
       // faceX = mouseX;
       // faceY = mouseY;
-
-      // Draw crosshair at face position
-      stroke(0, 255, 0); // Green color
+    } else {
+      faceX = width / 2;
+      faceY = height / 2;
     }
 
     for (let i = 0; i < 5; i++) {
@@ -324,15 +366,19 @@ function draw() {
 
         pop(); // Restore the transformation matrix
       }
+      updateVolumesBasedOnDistance(); // Adjust volumes based on face position
+
+      // Increase alphaValue to create the fade-in effect
+      if (alphaValue < 255) {
+        alphaValue += 1; // Adjust this value to control the speed of the fade-in
+      }
     }
 
-    line(faceX, 0, faceX, height); // Vertical line
-    line(0, faceY, width, faceY); // Horizontal line
+    // imageMode(CENTER); // Center the image at the face position
+    image(iconImage, faceX, faceY, iconWidth, iconHeight); // Add iconWidth and iconHeight as needed
 
     if (millis() - mainLoopStartTime >= puzzleTimeSeconds * 1000) {
-      currentState = "transition";
-
-      setTimeout(startNextLoop, puzzleTransitionTimeSeconds * 1000); // Start the next loop after 10 seconds on transition screen
+      advancePuzzle();
     }
   }
 }
@@ -341,14 +387,37 @@ function keyPressed() {
   if (currentState === "splashScreen") {
     currentState = "startVideo";
     startVideo.play(); // Start playing the video
+  } else if (currentState === "mainLoop") {
+    // Advance to the next puzzle or transition state
+    advancePuzzle();
   }
 }
 
 function mouseClicked() {
-  if (currentState === "mainLoop") {
-    currentState = "transition";
-    puzzleNumber++;
-    fadeOutAllSounds(); // Fade out all sounds
-    setTimeout(startNextLoop, puzzleTransitionTimeSeconds * 1000); // Start the next loop after 10 seconds on transition screen
+  if (currentState === "splashScreen") {
+    currentState = "startVideo";
+    startVideo.play(); // Start playing the video
+  } else if (currentState === "startVideo") {
+    startVideo.stop(); // Stop the video
+    videoEnded(); // Manually call the videoEnded function to proceed
+  } else if (currentState === "mainLoop") {
+    advancePuzzle();
   }
+}
+
+function advancePuzzle() {
+  currentState = "transition";
+  fadeOutAllSounds(); // Fade out all sounds
+  if (puzzleNumber < 8) {
+    setTimeout(startNextLoop, puzzleTransitionTimeSeconds * 1000); // Start the next loop after the transition
+  } else {
+    currentState = "endVideo";
+    fadeOutAllSounds(); // Fade out all sounds
+    setTimeout(playEndVideo, puzzleTransitionTimeSeconds * 1000); // Start the next loop after the transition
+  }
+}
+
+function playEndVideo() {
+  clear();
+  endVideo.play();
 }
