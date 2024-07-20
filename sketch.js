@@ -223,6 +223,12 @@ function windowResized() {
 }
 
 function playAllSounds() {
+  console.log(
+    "PlayAllSounds Called, puzzleNumber:",
+    puzzleNumber,
+    "CurrentState",
+    currentState
+  );
   backgroundSound.setVolume(volumeBackground);
   backgroundSound.play();
   Object.keys(soundsPerNote).forEach((note, index) => {
@@ -262,6 +268,12 @@ function videoEnded() {
 }
 
 function startNextLoop() {
+  console.log(
+    "startNextLoop Called, puzzle number: ",
+    puzzleNumber,
+    "currentState:",
+    currentState
+  );
   puzzleNumber++;
   alphaValue = 0; // Reset alpha value for the next puzzle's fade-in effect
 
@@ -305,6 +317,7 @@ function updateVolumesBasedOnDistance() {
   }
 }
 
+let firstPlayInitiated = false;
 function draw() {
   if (currentState === "splashScreen") {
     image(splashScreenImage, 0, 0, width, height);
@@ -318,7 +331,9 @@ function draw() {
   } else if (currentState === "endVideo") {
     image(endVideo, 0, 0, width, height);
   } else if (currentState === "mainLoop") {
-    if (puzzleNumber === 1) {
+    if (puzzleNumber === 1 && firstPlayInitiated === false) {
+      console.log("FirstPlayInitiated", firstPlayInitiated);
+      firstPlayInitiated = true;
       playAllSounds(); // Start playing the sounds for the first puzzle
     }
 
@@ -406,6 +421,12 @@ function mouseClicked() {
 }
 
 function advancePuzzle() {
+  console.log(
+    "AdvancePuzzle called, puzzle number: ",
+    puzzleNumber,
+    "currentState:",
+    currentState
+  );
   currentState = "transition";
   fadeOutAllSounds(); // Fade out all sounds
   if (puzzleNumber < 8) {
