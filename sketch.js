@@ -385,7 +385,7 @@ function draw() {
 
       // Increase alphaValue to create the fade-in effect
       if (alphaValue < 255) {
-        alphaValue += 1; // Adjust this value to control the speed of the fade-in
+        alphaValue += 2; // Adjust this value to control the speed of the fade-in
       }
     }
 
