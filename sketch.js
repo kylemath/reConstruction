@@ -238,25 +238,30 @@ function playAllSounds() {
   });
 }
 
-function stopAllSounds() {
-  // Stop the background sound
-  if (backgroundSound) {
-    backgroundSound.stop();
+function clearSounds() {
+  for (let i = 0; i < sounds.length; i++) {
+    if (sounds[i]) {
+      sounds[i].stop();
+      sounds[i] = null; // Remove reference to the sound
+    }
   }
-  // Stop all sounds in the sounds array
-  for (let sound of sounds) {
-    sound.stop();
+}
+function clearImages() {
+  for (let i = 0; i < images.length; i++) {
+    if (images[i]) {
+      images[i] = null; // Remove reference to the image
+    }
   }
 }
 
 function fadeOutAllSounds() {
   // Fade out the background sound
   if (backgroundSound) {
-    backgroundSound.fade(0, puzzleTransitionTimeSeconds + 2); // Fade to volume 0 over 1 second
+    backgroundSound.fade(0, puzzleTransitionTimeSeconds); // Fade to volume 0 over 1 second
   }
   // Fade out all sounds in the sounds array
   for (let sound of sounds) {
-    sound.fade(0, puzzleTransitionTimeSeconds + 2); // Fade to volume 0 over 1 second
+    sound.fade(0, puzzleTransitionTimeSeconds); // Fade to volume 0 over 1 second
   }
 }
 
@@ -268,6 +273,9 @@ function videoEnded() {
 }
 
 function startNextLoop() {
+  clearSounds(); // Clear previous sounds
+  clearImages(); // Clear previous images
+
   console.log(
     "startNextLoop Called, puzzle number: ",
     puzzleNumber,
