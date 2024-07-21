@@ -71,6 +71,7 @@ let faces = [];
 let faceX = 0;
 let faceY = 0;
 let options = { maxFaces: 1, refineLandmarks: false, flipHorizontal: false };
+let videoDownsampleFactor = 2;
 
 // Setup functions
 // ------
@@ -164,7 +165,8 @@ function draw() {
     let face = faces[0];
     if (face && face.keypoints) {
       // Compute mouth opening
-      let mouthArea = face.lips.width * face.lips.height;
+      let mouthArea =
+        face.lips.width * face.lips.height * videoDownsampleFactor;
       iconWidth = map(mouthArea, 1000, 8000, 20, 120);
 
       // Compute centroid in a single pass
@@ -178,8 +180,8 @@ function draw() {
       meanFace.x /= numKeypoints;
       meanFace.y /= numKeypoints;
 
-      faceX = width - meanFace.x;
-      faceY = meanFace.y;
+      faceX = width - meanFace.x * videoDownsampleFactor;
+      faceY = meanFace.y * videoDownsampleFactor;
 
       // // for mouse testing
       // faceX = mouseX;
@@ -439,7 +441,10 @@ function startFaceDetection() {
   faceY = height / 2;
   // Setup video capture
   webcamVideo = createCapture(VIDEO);
-  webcamVideo.size(width, height);
+  webcamVideo.size(
+    width / videoDownsampleFactor,
+    height / videoDownsampleFactor
+  );
   webcamVideo.hide();
 
   // Start detecting faces from the webcam video
