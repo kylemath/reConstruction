@@ -327,6 +327,7 @@ function updateVolumesBasedOnDistance() {
 }
 
 let firstPlayInitiated = false;
+
 function draw() {
   if (currentState === "splashScreen") {
     image(splashScreenImage, 0, 0, width, height);
@@ -409,8 +410,7 @@ function draw() {
 
 function keyPressed() {
   if (currentState === "splashScreen") {
-    currentState = "startVideo";
-    startVideo.play(); // Start playing the video
+    startFirstVideo();
   } else if (currentState === "mainLoop") {
     // Advance to the next puzzle or transition state
     advancePuzzle();
@@ -419,14 +419,21 @@ function keyPressed() {
 
 function mouseClicked() {
   if (currentState === "splashScreen") {
-    currentState = "startVideo";
-    startVideo.play(); // Start playing the video
+    startFirstVideo();
   } else if (currentState === "startVideo") {
     startVideo.stop(); // Stop the video
     videoEnded(); // Manually call the videoEnded function to proceed
   } else if (currentState === "mainLoop") {
     advancePuzzle();
   }
+}
+
+function startFirstVideo() {
+  let fs = fullscreen();
+  fullscreen(!fs);
+  resizeCanvas(displayWidth, displayHeight);
+  currentState = "startVideo";
+  startVideo.play(); // Start playing the video
 }
 
 function advancePuzzle() {
