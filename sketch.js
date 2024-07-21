@@ -47,7 +47,7 @@ let soundsPerNote = {
 
 let soundNumber;
 
-let volumeBackground = 0.2;
+let volumeBackground = 0.4;
 let volumeSettings = {
   Asharp: 0.2,
   Csharp: 0.2,
@@ -201,7 +201,7 @@ function setup() {
   currentState = "splashScreen";
 
   background(255);
-  frameRate(10); // Set the frame rate to 10 frames per second
+  frameRate(30); // Set the frame rate to 10 frames per second
   faceX = 0;
   faceY = 0;
   // Make keyboard
@@ -230,7 +230,7 @@ function playAllSounds() {
     currentState
   );
   backgroundSound.setVolume(volumeBackground);
-  backgroundSound.play();
+  backgroundSound.loop();
   Object.keys(soundsPerNote).forEach((note, index) => {
     let sound = sounds[index];
     sound.setVolume(volumeSettings[note]);
@@ -239,6 +239,7 @@ function playAllSounds() {
 }
 
 function clearSounds() {
+  backgroundSound.stop();
   for (let i = 0; i < sounds.length; i++) {
     if (sounds[i]) {
       sounds[i].stop();
@@ -314,7 +315,7 @@ function updateVolumesBasedOnDistance() {
 
       // Map the distance to a volume level (0.0 to 1.0)
       // Assuming a maximum effective distance of 600 pixels for full volume
-      let volume = map(distance, 0, 600, 1.0, 0.0, true);
+      let volume = map(distance, 0, 600, 0.8, 0.0, true);
       volume = constrain(volume, 0, 1); // Ensure volume is within bounds
 
       // Update the volume of the corresponding sound
